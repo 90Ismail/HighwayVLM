@@ -1,0 +1,9 @@
+# Placeholder camera configuration for MN511.
+# Values will be manually populated in Part 2.
+# Camera IDs and snapshot URLs may change over time.
+
+- camera_id: "<MN511_CAMERA_ID>"
+  name: "<CAMERA_NAME>"
+  snapshot_url: "<MN511_SNAPSHOT_URL>"
+  corridor: "I-94"
+  direction: "WB"

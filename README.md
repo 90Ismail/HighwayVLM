@@ -1,116 +1,51 @@
-# highway-vlm  
-**UROP Spring 2026 — Advisor: Prof. Seongjin Choi**  
+# MnDOT I-94 VLM Traffic Monitoring (Prototype)
 
-Student Reseacher: Ismail Yusuf
----
 ## Overview
+This repository defines an early-stage prototype for evaluating
+Vision-Language Models (VLMs) on MnDOT freeway camera imagery.
 
-Initial pipeline draft for exploring the use of **Vision-Language Models (VLMs)** on public Minnesota highway camera feeds as part of a Spring 2026 UROP project.
-
-This repository documents the **early system architecture, data flow, and setup** for running VLM-based scene understanding on a small set of freeway cameras.
-
----
-
-## Initial Scope
-
-- Use **3–10 MnDOT cameras** along the **I-94 corridor**
-- Sample frames from live camera feeds at fixed intervals
-- Apply VLM inference to generate natural-language descriptions of traffic scenes
-- Identify:
-  - Vehicles stopped on the shoulder  
-  - Collisions or abnormal stoppages
-- Store structured incident logs
-- Display live video and logs in a basic web dashboard
-- Run inference using **VESSL AI** GPU resources
-
-This repository represents an **initial scope and pipeline draft**, not a finalized system.
+The project is intentionally minimal and research-focused.
 
 ---
 
-## Data Source
+## Project Phases
 
-- Public Minnesota traffic cameras  
-  https://511mn.org/list/cameras
-- Camera selection limited to the I-94 corridor
-- Camera metadata stored locally, including:
-  - Camera ID  
-  - Traffic direction  
-  - Stream URL  
+### Part 1  Scaffolding (Current)
+- Repository structure
+- External API framing
+- Credential-agnostic design
+- No execution logic
 
----
+### Part 2  API Integration
+- MN511 camera snapshot ingestion
+- OpenAI VLM inference
 
-## System Design (Initial)
-
-1. Camera streams are ingested and sampled  
-2. Frames are passed to a Vision-Language Model  
-3. VLM output is returned as natural-language text  
-4. Text outputs are parsed into structured logs  
-5. Live video and logs are served to a dashboard  
-
-All outputs are timestamped and camera-referenced.
+### Part 3  Logging & Dashboard
+- Structured incident logs
+- Minimal web dashboard
 
 ---
 
-## Tech Stack (Initial)
+## External APIs & Credentials
 
-### Backend
-- Python
-- OpenCV (frame capture only)
-- FastAPI
-- Vision-Language Models
+The following are required but **not included** in this repository:
 
----
+- MN511 camera APIs (camera IDs, snapshot URLs, tokens)
+- OpenAI API key (for vision-language inference)
 
-### Infrastructure
-- VESSL AI
-- Docker
+All credentials are injected via environment variables.
 
 ---
 
-### Frontend
-- React
-- TypeScript
-- Vite
+## Execution Environment
+
+This project is designed to run as a workload on **VESSL AI**.
+VESSL provides GPU/CPU execution, while OpenAI provides the hosted VLM.
+
+GPU usage is optional in early phases.
 
 ---
 
-### Data
-- JSON-based incident logs
-
----
-
-## Project Structure
-
-```text
-highway-vlm/
-│
-├── backend/
-│   ├── ingest/
-│   │   └── camera_stream.py
-│   │
-│   ├── vlm/
-│   │   ├── prompt.py
-│   │   └── inference.py
-│   │
-│   ├── api/
-│   │   └── server.py
-│   │
-│   └── logs/
-│       └── incidents.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── App.tsx
-│   └── vite.config.ts
-│
-├── vessl/
-│   └── experiment.yaml
-│
-├── configs/
-│   └── cameras.json
-│
-├── requirements.txt
-├── Dockerfile
-└── README.md
+## Disclaimer
+This repository represents an initial scope and pipeline draft,
+not a production system.
