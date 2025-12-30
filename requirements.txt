@@ -1,4 +1,8 @@
 requests
 pyyaml
 flask
+fastapi
 openai
+pydantic
+uvicorn
+python-dotenv

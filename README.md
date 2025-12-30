@@ -17,7 +17,7 @@ The project is intentionally minimal and research-focused.
 - No execution logic
 
 ### Part 2  API Integration
-- MN511 camera snapshot ingestion
+- Camera snapshot ingestion
 - OpenAI VLM inference
 
 ### Part 3  Logging & Dashboard
@@ -30,7 +30,7 @@ The project is intentionally minimal and research-focused.
 
 The following are required but **not included** in this repository:
 
-- MN511 camera APIs (camera IDs, snapshot URLs, tokens)
+- Camera snapshots (camera IDs, snapshot URLs)
 - OpenAI API key (for vision-language inference)
 
 All credentials are injected via environment variables.
