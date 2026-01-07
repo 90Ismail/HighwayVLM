@@ -43,13 +43,19 @@ def _build_snapshot_url(camera):
     return template.format(camera_id=camera_id)
 
 
-def _looks_like_image_url(value):
+def _looks_like_image_url(value, key_hint=None):
     if not value:
         return False
     lowered = value.lower()
-    if lowered.startswith("http://") or lowered.startswith("https://") or lowered.startswith("/"):
-        return re.search(r"\.(?:jpg|jpeg|png)(?:\?|$)", lowered) is not None
-    return False
+    if re.search(r"\.(?:jpg|jpeg|png|gif)(?:\?|$)", lowered):
+        return not _is_viewer_url(lowered)
+    if not (lowered.startswith("http://") or lowered.startswith("https://") or lowered.startswith("/")):
+        return False
+    if _is_viewer_url(lowered):
+        return False
+    if key_hint and ("image" in key_hint or "snapshot" in key_hint):
+        return True
+    return "image" in lowered or "snapshot" in lowered
 
 
 def _base_origin(url):
@@ -70,15 +76,18 @@ def _extract_image_url_from_payload(payload, base_url):
         if isinstance(item, dict):
             for key, value in item.items():
                 if isinstance(value, str):
-                    if _looks_like_image_url(value):
-                        return urljoin(base_url, value)
                     key_lower = key.lower()
-                    if ("image" in key_lower or "snapshot" in key_lower) and _looks_like_image_url(value):
+                    if _looks_like_image_url(value, key_lower):
                         return urljoin(base_url, value)
                 elif isinstance(value, (dict, list)):
                     stack.append(value)
         elif isinstance(item, list):
-            stack.extend(item)
+            for value in item:
+                if isinstance(value, str):
+                    if _looks_like_image_url(value):
+                        return urljoin(base_url, value)
+                else:
+                    stack.append(value)
     return None
 
 
@@ -110,8 +119,14 @@ def _fetch_public_camera_metadata_url(camera, base_url):
     candidates = [
         f"{origin}/api/v2/cameras/{camera_id}",
         f"{origin}/api/v1/cameras/{camera_id}",
+        f"{origin}/api/cameras/{camera_id}",
         f"{origin}/api/v2/cameras?ids={camera_id}",
         f"{origin}/api/v1/cameras?ids={camera_id}",
+        f"{origin}/api/cameras?ids={camera_id}",
+        f"{origin}/api/v2/cameras?camera_ids={camera_id}",
+        f"{origin}/api/v1/cameras?camera_ids={camera_id}",
+        f"{origin}/api/cameras?camera_ids={camera_id}",
+        f"{origin}/api/cameras?cameraId={camera_id}",
     ]
     for url in candidates:
         try:
@@ -167,8 +182,26 @@ def fetch_snapshot_bytes(camera):
     )
     response.raise_for_status()
     content_type = response.headers.get("Content-Type")
-    if content_type and content_type.lower().startswith("image/"):
+    content_type_lower = (content_type or "").lower()
+    if content_type_lower.startswith("image/"):
         return response.content, content_type
+    if "application/json" in content_type_lower or "text/json" in content_type_lower:
+        try:
+            payload = response.json()
+        except Exception:
+            payload = None
+        image_url = _extract_image_url_from_payload(payload, url)
+        if not image_url:
+            raise ValueError("snapshot_metadata_missing_image_url")
+        image_response = requests.get(
+            image_url,
+            timeout=get_request_timeout_seconds(),
+        )
+        image_response.raise_for_status()
+        image_type = image_response.headers.get("Content-Type")
+        if image_type and not image_type.lower().startswith("image/"):
+            raise ValueError(f"snapshot_not_image: content_type={image_type}")
+        return image_response.content, image_type
     if _is_viewer_url(url) or (content_type and "text/html" in content_type.lower()):
         image_url = _extract_image_url_from_html(response.text, url)
         if not image_url:

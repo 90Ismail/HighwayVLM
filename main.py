@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from config_loader import load_cameras
 from pipeline import run_loop
 from settings import FRAMES_DIR
-from storage import get_status_summary, init_db, list_cameras, list_latest_log, list_logs, upsert_cameras
+from storage import get_status_summary, init_db, list_latest_log, list_logs, sync_cameras
 
 app = FastAPI(title="HighwayVLM API")
 
@@ -28,7 +28,7 @@ def _bootstrap():
     init_db()
     cameras = load_cameras()
     if cameras:
-        upsert_cameras(cameras)
+        sync_cameras(cameras)
 
 
 def _start_worker():
@@ -56,13 +56,28 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/health")
+def api_health():
+    return {"status": "ok"}
+
+
 @app.get("/cameras")
 def cameras():
-    return list_cameras()
+    return load_cameras()
+
+
+@app.get("/api/cameras")
+def cameras_api():
+    return load_cameras()
 
 
 @app.get("/logs/latest")
 def logs_latest(camera_id: Optional[str] = None):
+    return list_latest_log(camera_id=camera_id) or {}
+
+
+@app.get("/api/logs/latest")
+def logs_latest_api(camera_id: Optional[str] = None):
     return list_latest_log(camera_id=camera_id) or {}
 
 
@@ -74,6 +89,14 @@ def logs(
     return list_logs(limit=limit, camera_id=camera_id)
 
 
+@app.get("/api/logs")
+def logs_api(
+    camera_id: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=500),
+):
+    return list_logs(limit=limit, camera_id=camera_id)
+
+
 @app.get("/status/summary")
 def status_summary():
-    return get_status_summary()
+    return get_status_summary(load_cameras())

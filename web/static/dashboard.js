@@ -1,24 +1,17 @@
-const REFRESH_SECONDS = 10;
+const REFRESH_SECONDS = 30;
 
 const grid = document.getElementById("camera-grid");
-const cameraCount = document.getElementById("camera-count");
-const incidentCount = document.getElementById("incident-count");
-const errorCount = document.getElementById("error-count");
 const lastUpdated = document.getElementById("last-updated");
+const lastUpdatedFull = document.getElementById("last-updated-full");
 const refreshInterval = document.getElementById("refresh-interval");
+const appStatus = document.getElementById("app-status");
+const statusDetail = document.getElementById("status-detail");
+const refreshNow = document.getElementById("refresh-now");
 const template = document.getElementById("camera-card-template");
 
 refreshInterval.textContent = `${REFRESH_SECONDS}s`;
 
-const badgeClass = (state) => {
-  if (!state) return "unknown";
-  return state;
-};
-
-const formatConfidence = (value) => {
-  if (value === null || value === undefined) return "--";
-  return `${Math.round(value * 100)}%`;
-};
+let refreshing = false;
 
 const formatTime = (value) => {
   if (!value) return "--";
@@ -27,50 +20,164 @@ const formatTime = (value) => {
   return date.toLocaleTimeString();
 };
 
+const titleCase = (value) =>
+  value
+    ? value
+        .toString()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (match) => match.toUpperCase())
+    : "Unknown";
+
+const withCacheBust = (url, token) => {
+  if (!url) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  const cacheKey = token ? encodeURIComponent(token) : Date.now();
+  return `${url}${separator}t=${cacheKey}`;
+};
+
+const setStatus = (text, state, detail) => {
+  if (!appStatus) return;
+  appStatus.textContent = text;
+  appStatus.classList.remove("status-loading", "status-live", "status-error");
+  appStatus.classList.add(`status-${state}`);
+  if (statusDetail) {
+    statusDetail.textContent = detail || "";
+  }
+};
+
 const buildCard = (camera) => {
   const node = template.content.firstElementChild.cloneNode(true);
   node.dataset.cameraId = camera.camera_id;
-  node.querySelector(".card-name").textContent = camera.name || camera.camera_id;
-  node.querySelector(".card-sub").textContent = `${camera.corridor || ""} ${camera.direction || ""}`.trim();
-  const badge = node.querySelector(".badge");
-  badge.textContent = "unknown";
-  badge.classList.add("unknown");
+  if (camera.snapshot_url) {
+    node.dataset.snapshotUrl = camera.snapshot_url;
+  }
+  node.querySelector(".camera-name").textContent = camera.name || camera.camera_id;
+  node.querySelector(".camera-sub").textContent = `${camera.corridor || ""} ${camera.direction || ""}`.trim();
   const link = node.querySelector(".snapshot-link");
-  link.href = camera.source_url || "#";
+  link.href = camera.snapshot_url || "#";
+  const snapshot = node.querySelector(".snapshot");
   const img = node.querySelector(".snapshot-img");
+  img.alt = `Camera snapshot for ${camera.name || camera.camera_id || "camera"}`;
+  img.addEventListener("load", () => {
+    snapshot.classList.add("is-loaded");
+  });
   img.addEventListener("error", () => {
-    img.classList.remove("loaded");
+    const fallback = img.dataset.fallbackSrc;
+    if (fallback && img.src !== fallback) {
+      img.src = fallback;
+      return;
+    }
+    snapshot.classList.remove("is-loaded");
   });
   return node;
 };
 
+const normalizeIncidents = (value) => {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [];
+};
+
+const resolveNotes = (analysis, latest, fallback) => {
+  const note = analysis?.notes || latest?.notes;
+  if (note && note.toString().trim()) {
+    return note;
+  }
+  return fallback;
+};
+
 const updateCard = (node, summary) => {
-  const badge = node.querySelector(".badge");
-  const observed = node.querySelector(".observed-direction");
-  const confidence = node.querySelector(".confidence");
   const updated = node.querySelector(".updated-at");
-  const incidents = node.querySelector(".incidents");
-  const notes = node.querySelector(".notes-text");
-  const errors = node.querySelector(".errors");
+  const snapshot = node.querySelector(".snapshot");
   const img = node.querySelector(".snapshot-img");
+  const link = node.querySelector(".snapshot-link");
+  const badge = node.querySelector(".badge");
+  const trafficState = node.querySelector(".traffic-state");
+  const incidentsCount = node.querySelector(".incidents-count");
+  const incidentsList = node.querySelector(".incidents-list");
+  const incidentsEmpty = node.querySelector(".incidents-empty");
+  const summaryText = node.querySelector(".summary-text");
+  const notesText = node.querySelector(".notes-text-body");
 
   const latest = summary?.latest_log;
-  const traffic = latest?.traffic_state || "unknown";
-  badge.textContent = traffic.replace(/_/g, " ");
-  badge.className = `badge ${badgeClass(traffic)}`;
-  observed.textContent = latest?.observed_direction || "--";
-  confidence.textContent = formatConfidence(latest?.overall_confidence);
-  updated.textContent = formatTime(latest?.created_at);
-  incidents.textContent = JSON.stringify(latest?.incidents || [], null, 2);
-  notes.textContent = latest?.notes || "--";
-  const errorText = latest?.error || latest?.skipped_reason || "--";
-  errors.textContent = errorText;
+  const analysis = summary?.analysis_log || latest;
+  updated.textContent = formatTime(latest?.created_at || analysis?.created_at);
 
-  if (latest?.image_path) {
-    img.src = `/frames/${encodeURIComponent(latest.image_path.split(/[\\/]/).pop())}`;
-    img.classList.add("loaded");
+  const snapshotUrl = node.dataset.snapshotUrl;
+  const framePath = latest?.image_path || analysis?.image_path;
+  let frameUrl = null;
+  if (framePath) {
+    const filename = encodeURIComponent(framePath.split(/[\\/]/).pop());
+    frameUrl = `/frames/${filename}`;
+  }
+  const cacheToken = Date.now();
+  const primaryUrl = snapshotUrl ? withCacheBust(snapshotUrl, cacheToken) : null;
+  const fallbackUrl = frameUrl ? withCacheBust(frameUrl, cacheToken) : null;
+  const imageUrl = primaryUrl || fallbackUrl;
+  if (imageUrl) {
+    img.dataset.fallbackSrc = fallbackUrl || "";
+    if (img.src !== imageUrl) {
+      img.src = imageUrl;
+    }
   } else {
-    img.classList.remove("loaded");
+    img.dataset.fallbackSrc = "";
+    snapshot.classList.remove("is-loaded");
+  }
+  if (link) {
+    const linkUrl = snapshotUrl || frameUrl;
+    if (linkUrl) {
+      link.href = linkUrl;
+    } else {
+      link.removeAttribute("href");
+    }
+  }
+
+  const rawTraffic = (analysis?.traffic_state || "").toString().trim().toLowerCase();
+  const isUnknown = !rawTraffic || rawTraffic === "unknown";
+  const trafficValue = isUnknown ? "pending" : rawTraffic;
+  const trafficLabel = isUnknown ? "Awaiting analysis" : titleCase(rawTraffic);
+  if (badge) {
+    badge.className = `badge ${trafficValue}`;
+    badge.textContent = trafficLabel;
+  }
+
+  if (trafficState) {
+    trafficState.textContent = trafficLabel;
+  }
+
+  const incidents = normalizeIncidents(analysis?.incidents || latest?.incidents);
+  if (incidentsCount) {
+    incidentsCount.textContent = incidents.length.toString();
+  }
+  if (incidentsList && incidentsEmpty) {
+    incidentsList.innerHTML = "";
+    if (incidents.length) {
+      incidentsEmpty.style.display = "none";
+      incidents.forEach((incident) => {
+        const item = document.createElement("li");
+        const type = titleCase(incident?.type || "incident");
+        const severity = incident?.severity ? ` (${incident.severity})` : "";
+        const desc = incident?.description ? `: ${incident.description}` : "";
+        item.textContent = `${type}${severity}${desc}`;
+        incidentsList.appendChild(item);
+      });
+    } else {
+      incidentsEmpty.style.display = "block";
+    }
+  }
+
+  if (notesText) {
+    notesText.textContent = resolveNotes(
+      analysis,
+      latest,
+      "No notes recorded for this frame."
+    );
+  }
+
+  if (summaryText) {
+    const summaryFallback = isUnknown
+      ? "No summary yet."
+      : `Traffic appears ${trafficLabel.toLowerCase()}.`;
+    summaryText.textContent = resolveNotes(analysis, latest, summaryFallback);
   }
 };
 
@@ -90,40 +197,57 @@ const ensureCards = (cameras) => {
     existing.set(node.dataset.cameraId, node);
   });
   cameras.forEach((camera) => {
-    if (existing.has(camera.camera_id)) return;
-    const card = buildCard(camera);
-    grid.appendChild(card);
+    const existingCard = existing.get(camera.camera_id);
+    if (existingCard) {
+      if (camera.snapshot_url) {
+        existingCard.dataset.snapshotUrl = camera.snapshot_url;
+      }
+      return;
+    }
+    grid.appendChild(buildCard(camera));
   });
-  cameraCount.textContent = cameras.length.toString();
 };
 
-const refresh = async () => {
+const refresh = async (source = "auto") => {
+  if (refreshing) return;
+  refreshing = true;
   try {
+    setStatus("Loading", "loading", source === "manual" ? "Manual refresh" : "Auto refresh");
     const [cameras, summary] = await Promise.all([loadCameras(), loadSummary()]);
     ensureCards(cameras);
-    let incidentsTotal = 0;
-    let errorsTotal = 0;
     summary.forEach((entry) => {
       const node = grid.querySelector(`[data-camera-id="${entry.camera_id}"]`);
       if (node) {
         updateCard(node, entry);
       }
-      const latest = entry.latest_log;
-      if (latest?.incidents?.length) {
-        incidentsTotal += latest.incidents.length;
-      }
-      if (latest?.error) {
-        errorsTotal += 1;
-      }
     });
-    incidentCount.textContent = incidentsTotal.toString();
-    errorCount.textContent = errorsTotal.toString();
-    lastUpdated.textContent = new Date().toLocaleTimeString();
+    const now = new Date();
+    lastUpdated.textContent = now.toLocaleTimeString();
+    if (lastUpdatedFull) {
+      lastUpdatedFull.textContent = now.toLocaleString();
+    }
+    const errorCount = summary.filter((entry) => entry.latest_log?.error).length;
+    const skippedCount = summary.filter((entry) => entry.latest_log?.skipped_reason).length;
+    const hasData = summary.some((entry) => entry.latest_log?.created_at);
+    if (errorCount) {
+      setStatus("Issues", "error", `${errorCount} camera errors reported`);
+    } else if (hasData) {
+      const detail = skippedCount ? `${skippedCount} cameras awaiting analysis` : "Receiving camera data";
+      setStatus("Live", "live", detail);
+    } else {
+      setStatus("Waiting for data", "loading", "No frames analyzed yet");
+    }
   } catch (error) {
-    errorCount.textContent = "!";
     lastUpdated.textContent = "error";
+    setStatus("Offline", "error", "API unreachable");
+  } finally {
+    refreshing = false;
   }
 };
 
-refresh();
-setInterval(refresh, REFRESH_SECONDS * 1000);
+if (refreshNow) {
+  refreshNow.addEventListener("click", () => refresh("manual"));
+}
+
+refresh("auto");
+setInterval(() => refresh("auto"), REFRESH_SECONDS * 1000);

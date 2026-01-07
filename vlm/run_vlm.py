@@ -1,7 +1,7 @@
 """
 VLM inference runner.
 
-Loads the latest snapshot per camera, calls the OpenAI VLM, and stores logs.
+Loads the latest snapshot per camera, calls the VLM, and stores logs.
 """
 
 import argparse
@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from config_loader import load_cameras
-from settings import FRAMES_DIR, RAW_VLM_OUTPUT_DIR, get_openai_model, get_vlm_interval_seconds
-from storage import init_db, insert_log, upsert_cameras
+from settings import FRAMES_DIR, RAW_VLM_OUTPUT_DIR, get_vlm_model, get_vlm_interval_seconds
+from storage import init_db, insert_log, sync_cameras
 from vlm.client import VLMClient
 
 
@@ -65,8 +65,8 @@ def _write_raw_output(camera_id, captured_at, model, text, parsed):
 def run_once():
     cameras = load_cameras()
     init_db()
-    upsert_cameras(cameras)
-    model = get_openai_model()
+    sync_cameras(cameras)
+    model = get_vlm_model()
     client = VLMClient(model=model)
     for camera in cameras:
         camera_id = camera.get("camera_id")

@@ -1,38 +1,37 @@
-# Seed camera configuration.
-# Note: "snapshot_url" should point to a direct image endpoint.
-# "source_url" is kept as the 511mn.org camera viewer reference.
+# Camera configuration using MnDOT CARS Program snapshot endpoints.
+# Each snapshot is polled every 30 seconds but processed only once per unique frame.
 
-- camera_id: "443887"
+- camera_id: "C30249"
   name: "I-94: Hudson Rd WB @ 8th St"
-  snapshot_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/443887/3160743534"
-  source_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/443887/3160743534"
+  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30249"
   corridor: "I-94"
   direction: "WB"
+  poll_interval_sec: 30
 
-- camera_id: "444053"
+- camera_id: "C30250"
   name: "I-94: Hudson Rd WB @ 19th St"
-  snapshot_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/444053/2435186046"
-  source_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/444053/2435186046"
+  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30250"
   corridor: "I-94"
   direction: "WB"
+  poll_interval_sec: 30
 
-- camera_id: "445190"
-  name: "I-94: I-94 EB @ T.H.120 (Century Ave)"
-  snapshot_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/445190/1190345840"
-  source_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/445190/1190345840"
+- camera_id: "C860"
+  name: "I-94 EB @ T.H.120 (Century Ave)"
+  snapshot_url: "https://public.carsprogram.org/cameras/MN/C860"
   corridor: "I-94"
   direction: "EB"
+  poll_interval_sec: 30
 
-- camera_id: "444065"
+- camera_id: "C30251"
   name: "I-94: I-94 WB E of T.H.120"
-  snapshot_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/444065/4005665786"
-  source_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/444065/4005665786"
+  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30251"
   corridor: "I-94"
   direction: "WB"
+  poll_interval_sec: 30
 
-- camera_id: "445890"
+- camera_id: "C30285"
   name: "I-94: I-94 WB @ Ideal Ave N"
-  snapshot_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/445890/4128689408"
-  source_url: "https://511mn.org/list/cameras?debounce=true&searchTerm=i-94&page=1&pageRecordLimit=25#media/camera/445890/4128689408"
+  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30285"
   corridor: "I-94"
   direction: "WB"
+  poll_interval_sec: 30

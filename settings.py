@@ -38,7 +38,7 @@ def get_camera_config_path():
 
 
 def get_run_interval_seconds():
-    return int(os.getenv("RUN_INTERVAL_SECONDS", "10"))
+    return int(os.getenv("RUN_INTERVAL_SECONDS", "30"))
 
 
 def get_snapshot_interval_seconds():
@@ -62,12 +62,17 @@ def get_request_timeout_seconds():
     return int(os.getenv("REQUEST_TIMEOUT_SECONDS", "20"))
 
 
-def get_openai_timeout_seconds():
-    return int(os.getenv("OPENAI_TIMEOUT_SECONDS", "30"))
+def get_vlm_timeout_seconds():
+    return int(os.getenv("VLM_TIMEOUT_SECONDS", "30"))
 
 
 def get_vlm_max_retries():
     return int(os.getenv("VLM_MAX_RETRIES", "3"))
+
+
+
+def get_vlm_max_tokens():
+    return int(os.getenv("VLM_MAX_TOKENS", "512"))
 
 
 def get_vlm_max_calls_per_run():
@@ -90,14 +95,45 @@ def get_image_url_regex():
     return os.getenv("IMAGE_URL_REGEX")
 
 
-def get_openai_model():
-    return os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+def get_vlm_model():
+    return os.getenv("VLM_MODEL", "qwen/qwen2.5-vl-32b-instruct")
 
 
-def get_openai_api_key():
+def get_vlm_api_key():
     if dotenv_values:
         env_path = ROOT / ".env"
         values = dotenv_values(env_path)
-        if values.get("OPENAI_API_KEY"):
-            return values["OPENAI_API_KEY"]
-    return os.getenv("OPENAI_API_KEY")
+        if values.get("OPENROUTER_API_KEY"):
+            return values["OPENROUTER_API_KEY"]
+        if values.get("VLM_API_KEY"):
+            return values["VLM_API_KEY"]
+    return os.getenv("OPENROUTER_API_KEY") or os.getenv("VLM_API_KEY")
+
+
+def get_vlm_base_url():
+    if dotenv_values:
+        env_path = ROOT / ".env"
+        values = dotenv_values(env_path)
+        if values.get("OPENROUTER_BASE_URL"):
+            return values["OPENROUTER_BASE_URL"]
+        if values.get("VLM_BASE_URL"):
+            return values["VLM_BASE_URL"]
+    return os.getenv("OPENROUTER_BASE_URL", os.getenv("VLM_BASE_URL", "https://openrouter.ai/api/v1"))
+
+
+def get_openrouter_http_referer():
+    if dotenv_values:
+        env_path = ROOT / ".env"
+        values = dotenv_values(env_path)
+        if values.get("OPENROUTER_HTTP_REFERER"):
+            return values["OPENROUTER_HTTP_REFERER"]
+    return os.getenv("OPENROUTER_HTTP_REFERER")
+
+
+def get_openrouter_app_title():
+    if dotenv_values:
+        env_path = ROOT / ".env"
+        values = dotenv_values(env_path)
+        if values.get("OPENROUTER_APP_TITLE"):
+            return values["OPENROUTER_APP_TITLE"]
+    return os.getenv("OPENROUTER_APP_TITLE")

@@ -1,51 +1,46 @@
 # MnDOT I-94 VLM Traffic Monitoring (Prototype)
 
 ## Overview
-This repository defines an early-stage prototype for evaluating
-Vision-Language Models (VLMs) on MnDOT freeway camera imagery.
+This project analyzes MnDOT freeway camera imagery with a vision-language model.
+It polls still-image snapshots (not live video feeds), stores the frames, and
+runs Qwen2.5-VL on new or changed images to summarize traffic conditions.
 
-The project is intentionally minimal and research-focused.
+## How It Works
+- Polls each camera's snapshot URL on a per-camera interval.
+- Saves snapshots to `data/frames` and computes a hash.
+- Runs the VLM only when the snapshot changes.
+- Logs results to SQLite and keeps raw VLM responses in `data/raw_vlm_outputs`.
 
----
+## Model
+By default the system uses Qwen2.5-VL via OpenRouter:
 
-## Project Phases
+- Model: `qwen/qwen2.5-vl-32b-instruct`
+- Override with `VLM_MODEL`
 
-### Part 1  Scaffolding (Current)
-- Repository structure
-- External API framing
-- Credential-agnostic design
-- No execution logic
+## Camera Configuration
+Cameras are configured in `config/cameras.yaml`:
 
-### Part 2  API Integration
-- Camera snapshot ingestion
-- OpenAI VLM inference
-
-### Part 3  Logging & Dashboard
-- Structured incident logs
-- Minimal web dashboard
-
----
+- `camera_id`, `name`, `corridor`, `direction`
+- `snapshot_url` (direct image or metadata endpoint)
+- `poll_interval_sec` (per-camera polling interval)
 
 ## External APIs & Credentials
+Required but not included:
 
-The following are required but **not included** in this repository:
+- Camera snapshot endpoints (or metadata endpoints that resolve to images)
+- OpenRouter API key for VLM calls
 
-- Camera snapshots (camera IDs, snapshot URLs)
-- OpenAI API key (for vision-language inference)
+Credentials are injected via environment variables, including:
 
-All credentials are injected via environment variables.
+- `OPENROUTER_API_KEY` or `VLM_API_KEY`
+- `VLM_MODEL`
+- `SNAPSHOT_URL_TEMPLATE` (optional)
+- `CAMERA_METADATA_URL_TEMPLATE` (optional)
+- `IMAGE_URL_REGEX` (optional)
 
----
-
-## Execution Environment
-
-This project is designed to run as a workload on **VESSL AI**.
-VESSL provides GPU/CPU execution, while OpenAI provides the hosted VLM.
-
-GPU usage is optional in early phases.
-
----
+## Runtime Notes
+- The system uses snapshot polling, not streaming video.
+- Logs and the minimal API/dashboard are served via `main.py`.
 
 ## Disclaimer
-This repository represents an initial scope and pipeline draft,
-not a production system.
+This repository is a prototype and not a production system.

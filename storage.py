@@ -78,6 +78,9 @@ def init_db():
                 raw_response TEXT,
                 error TEXT,
                 skipped_reason TEXT,
+                frame_hash TEXT,
+                last_seen_at TEXT,
+                last_processed_at TEXT,
                 FOREIGN KEY(camera_id) REFERENCES cameras(camera_id)
             )
             """
@@ -109,6 +112,9 @@ def init_db():
                 "raw_response": "raw_response TEXT",
                 "error": "error TEXT",
                 "skipped_reason": "skipped_reason TEXT",
+                "frame_hash": "frame_hash TEXT",
+                "last_seen_at": "last_seen_at TEXT",
+                "last_processed_at": "last_processed_at TEXT",
             },
         )
         conn.execute(
@@ -158,6 +164,23 @@ def upsert_cameras(cameras):
             )
 
 
+def sync_cameras(cameras):
+    if not cameras:
+        return
+    upsert_cameras(cameras)
+    camera_ids = sorted(
+        {camera.get("camera_id") for camera in cameras if camera.get("camera_id")}
+    )
+    if not camera_ids:
+        return
+    placeholders = ",".join("?" for _ in camera_ids)
+    with _connect() as conn:
+        conn.execute(
+            f"DELETE FROM cameras WHERE camera_id NOT IN ({placeholders})",
+            camera_ids,
+        )
+
+
 def list_cameras():
     with _connect() as conn:
         rows = conn.execute(
@@ -201,8 +224,11 @@ def insert_log(log_entry):
                 vlm_model,
                 raw_response,
                 error,
-                skipped_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                skipped_reason,
+                frame_hash,
+                last_seen_at,
+                last_processed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 log_entry.get("created_at"),
@@ -221,6 +247,9 @@ def insert_log(log_entry):
                 log_entry.get("raw_response"),
                 log_entry.get("error"),
                 log_entry.get("skipped_reason"),
+                log_entry.get("frame_hash"),
+                log_entry.get("last_seen_at"),
+                log_entry.get("last_processed_at"),
             ),
         )
     _append_incident_log(log_entry)
@@ -266,7 +295,8 @@ def list_logs(limit=100, camera_id=None):
     query = (
         "SELECT id, created_at, captured_at, camera_id, camera_name, corridor, "
         "direction, observed_direction, traffic_state, incidents_json, notes, "
-        "overall_confidence, image_path, vlm_model, raw_response, error, skipped_reason "
+        "overall_confidence, image_path, vlm_model, raw_response, error, skipped_reason, "
+        "frame_hash, last_seen_at, last_processed_at "
         "FROM vlm_logs"
     )
     params = []
@@ -306,6 +336,9 @@ def list_logs(limit=100, camera_id=None):
                 "raw_response": row[14],
                 "error": error,
                 "skipped_reason": skipped_reason,
+                "frame_hash": row[17],
+                "last_seen_at": row[18],
+                "last_processed_at": row[19],
             }
         )
     return results
@@ -315,7 +348,8 @@ def list_latest_log(camera_id=None):
     query = (
         "SELECT id, created_at, captured_at, camera_id, camera_name, corridor, "
         "direction, observed_direction, traffic_state, incidents_json, notes, "
-        "overall_confidence, image_path, vlm_model, raw_response, error, skipped_reason "
+        "overall_confidence, image_path, vlm_model, raw_response, error, skipped_reason, "
+        "frame_hash, last_seen_at, last_processed_at "
         "FROM vlm_logs"
     )
     params = []
@@ -353,17 +387,21 @@ def list_latest_log(camera_id=None):
         "raw_response": row[14],
         "error": error,
         "skipped_reason": skipped_reason,
+        "frame_hash": row[17],
+        "last_seen_at": row[18],
+        "last_processed_at": row[19],
     }
 
 
-def get_status_summary():
-    cameras = list_cameras()
+def get_status_summary(cameras=None):
+    cameras = cameras or list_cameras()
     with _connect() as conn:
-        rows = conn.execute(
+        latest_rows = conn.execute(
             """
             SELECT l.camera_id, l.created_at, l.captured_at, l.traffic_state,
                    l.incidents_json, l.overall_confidence, l.error, l.skipped_reason,
-                   l.observed_direction, l.notes, l.image_path
+                   l.observed_direction, l.notes, l.image_path, l.frame_hash,
+                   l.last_seen_at, l.last_processed_at
             FROM vlm_logs l
             INNER JOIN (
                 SELECT camera_id, MAX(created_at) AS max_created
@@ -373,8 +411,24 @@ def get_status_summary():
             ON l.camera_id = latest.camera_id AND l.created_at = latest.max_created
             """
         ).fetchall()
-    latest_by_camera = {}
-    for row in rows:
+        analysis_rows = conn.execute(
+            """
+            SELECT l.camera_id, l.created_at, l.captured_at, l.traffic_state,
+                   l.incidents_json, l.overall_confidence, l.error, l.skipped_reason,
+                   l.observed_direction, l.notes, l.image_path, l.frame_hash,
+                   l.last_seen_at, l.last_processed_at
+            FROM vlm_logs l
+            INNER JOIN (
+                SELECT camera_id, MAX(created_at) AS max_created
+                FROM vlm_logs
+                WHERE traffic_state IS NOT NULL
+                GROUP BY camera_id
+            ) latest
+            ON l.camera_id = latest.camera_id AND l.created_at = latest.max_created
+            """
+        ).fetchall()
+
+    def _row_to_log(row):
         incidents = []
         if row[4]:
             try:
@@ -383,7 +437,7 @@ def get_status_summary():
                 incidents = []
         error = sanitize_error_message(row[6])
         skipped_reason = sanitize_error_message(row[7])
-        latest_by_camera[row[0]] = {
+        return {
             "created_at": row[1],
             "captured_at": row[2],
             "traffic_state": row[3],
@@ -394,11 +448,18 @@ def get_status_summary():
             "observed_direction": row[8],
             "notes": row[9],
             "image_path": row[10],
+            "frame_hash": row[11],
+            "last_seen_at": row[12],
+            "last_processed_at": row[13],
         }
+
+    latest_by_camera = {row[0]: _row_to_log(row) for row in latest_rows}
+    analysis_by_camera = {row[0]: _row_to_log(row) for row in analysis_rows}
     summary = []
     for camera in cameras:
         camera_id = camera.get("camera_id")
         latest = latest_by_camera.get(camera_id)
+        analysis = analysis_by_camera.get(camera_id)
         summary.append(
             {
                 "camera_id": camera_id,
@@ -406,6 +467,7 @@ def get_status_summary():
                 "corridor": camera.get("corridor"),
                 "direction": camera.get("direction"),
                 "latest_log": latest,
+                "analysis_log": analysis,
             }
         )
     return summary

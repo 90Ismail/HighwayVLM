@@ -3,94 +3,93 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HighwayVLM | I-94 Live</title>
+    <title>HighwayVLM | I-94 Control Room</title>
     <link rel="stylesheet" href="/static/dashboard.css" />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
-    <header class="hero">
-      <div>
-        <p class="eyebrow">HighwayVLM Live</p>
+    <div class="ambient orb-one"></div>
+    <div class="ambient orb-two"></div>
+    <div class="ambient orb-three"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <p class="brand-kicker">HighwayVLM Control Room</p>
         <h1>I-94 Corridor Watch</h1>
-        <p class="subhead">
-          Vision-language summaries with incident metadata and confidence scoring.
+        <p class="brand-sub">
+          Live snapshots, incident summaries, and per-camera status with automatic refresh.
         </p>
       </div>
-      <div class="hero-meta">
-        <div class="meta-card">
-          <span>Refresh</span>
-          <strong id="refresh-interval">10s</strong>
+      <div class="controls">
+        <div class="stat-card">
+          <span>Auto refresh</span>
+          <strong id="refresh-interval">--</strong>
+          <small>Every 30 seconds</small>
         </div>
-        <div class="meta-card">
+        <div class="stat-card">
           <span>Last update</span>
           <strong id="last-updated">--</strong>
+          <small id="last-updated-full">--</small>
         </div>
+        <div class="stat-card">
+          <span>Status</span>
+          <strong id="app-status" class="status-pill status-loading">Starting</strong>
+          <small id="status-detail">Booting pipeline</small>
+        </div>
+        <button class="refresh-button" id="refresh-now" type="button">Refresh now</button>
       </div>
     </header>
 
-    <main>
-      <section class="status-strip">
-        <div class="strip-card">
-          <span>Total cameras</span>
-          <strong id="camera-count">0</strong>
-        </div>
-        <div class="strip-card">
-          <span>Incidents active</span>
-          <strong id="incident-count">0</strong>
-        </div>
-        <div class="strip-card">
-          <span>Errors</span>
-          <strong id="error-count">0</strong>
-        </div>
-      </section>
-
+    <main class="main">
       <section class="grid" id="camera-grid"></section>
     </main>
 
     <template id="camera-card-template">
-      <article class="card">
-        <div class="card-header">
+      <article class="camera-card">
+        <header class="camera-head">
           <div>
-            <p class="card-name"></p>
-            <p class="card-sub"></p>
+            <p class="camera-name"></p>
+            <p class="camera-sub"></p>
           </div>
-          <span class="badge"></span>
+          <span class="badge unknown">Unknown</span>
+        </header>
+        <div class="snapshot">
+          <img class="snapshot-img" alt="Camera snapshot" loading="lazy" decoding="async" />
+          <div class="snapshot-placeholder">
+            <span>Snapshot preview</span>
+            <small>Waiting for the latest image</small>
+          </div>
+          <div class="snapshot-overlay">
+            <span class="snapshot-label">Live snapshot</span>
+            <a class="snapshot-link" href="#" target="_blank" rel="noreferrer">Open snapshot</a>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="snapshot">
-            <div class="snapshot-fallback">
-              <span>Snapshot</span>
-              <a class="snapshot-link" href="#" target="_blank" rel="noreferrer">Open viewer</a>
-            </div>
-            <img class="snapshot-img" alt="Camera snapshot" />
+        <div class="card-section">
+          <p class="section-title">Summary</p>
+          <p class="summary-text">--</p>
+        </div>
+        <div class="card-stats">
+          <div class="stat">
+            <span>Updated</span>
+            <strong class="updated-at">--</strong>
           </div>
-          <div class="details">
-            <div class="detail">
-              <span>Observed dir</span>
-              <strong class="observed-direction">--</strong>
-            </div>
-            <div class="detail">
-              <span>Confidence</span>
-              <strong class="confidence">--</strong>
-            </div>
-            <div class="detail">
-              <span>Updated</span>
-              <strong class="updated-at">--</strong>
-            </div>
+          <div class="stat">
+            <span>Traffic</span>
+            <strong class="traffic-state">Unknown</strong>
           </div>
-          <div class="notes">
-            <p class="notes-label">Incidents</p>
-            <pre class="incidents">[]</pre>
+          <div class="stat">
+            <span>Incidents</span>
+            <strong class="incidents-count">0</strong>
           </div>
-          <div class="notes">
-            <p class="notes-label">Notes</p>
-            <p class="notes-text">--</p>
-          </div>
-          <div class="notes foot">
-            <p class="notes-label">Errors / Skips</p>
-            <p class="notes-text errors">--</p>
-          </div>
+        </div>
+        <div class="card-section incidents">
+          <p class="section-title">Incidents</p>
+          <ul class="incidents-list"></ul>
+          <p class="incidents-empty">None detected</p>
+        </div>
+        <div class="card-section notes">
+          <p class="section-title">Notes</p>
+          <p class="notes-text notes-text-body">--</p>
         </div>
       </article>
     </template>
