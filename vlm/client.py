@@ -78,7 +78,7 @@ class VLMClient:
             "incidents is a list of objects with {type, severity, description}. Use types like crash, stopped_vehicle, or shoulder_stall when applicable. "
             "severity must be low, medium, or high. Use [] if none. "
             "notes should be short: if no incidents, write 'clear traffic'; otherwise list only incident types. "
-            "overall_confidence must be between 0 and 1."
+            "overall_confidence must be between 0 and 1."   
         )
         user_text = (
             "Analyze this freeway camera image and summarize traffic conditions. "

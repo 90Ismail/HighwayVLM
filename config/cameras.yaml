@@ -1,37 +1,37 @@
-# Camera configuration using MnDOT CARS Program snapshot endpoints.
-# Each snapshot is polled every 30 seconds but processed only once per unique frame.
+# Camera configuration using MnDOT snapshot endpoints.
+# Each snapshot is polled every 10 seconds but processed only once per unique frame.
 
-- camera_id: "C30249"
-  name: "I-94: Hudson Rd WB @ 8th St"
-  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30249"
+- camera_id: "C30248"
+  name: "I-94: Hudson Rd WB @ 4th St"
+  snapshot_url: "https://video.dot.state.mn.us/video/image/metro/C30248"
   corridor: "I-94"
   direction: "WB"
-  poll_interval_sec: 30
+  poll_interval_sec: 10
 
 - camera_id: "C30250"
   name: "I-94: Hudson Rd WB @ 19th St"
-  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30250"
+  snapshot_url: "https://video.dot.state.mn.us/video/image/metro/C30250"
   corridor: "I-94"
   direction: "WB"
-  poll_interval_sec: 30
+  poll_interval_sec: 10
 
 - camera_id: "C860"
-  name: "I-94 EB @ T.H.120 (Century Ave)"
-  snapshot_url: "https://public.carsprogram.org/cameras/MN/C860"
+  name: "I-94: EB @ T.H.120 (Century Ave)"
+  snapshot_url: "https://video.dot.state.mn.us/video/image/metro/C860"
   corridor: "I-94"
   direction: "EB"
-  poll_interval_sec: 30
+  poll_interval_sec: 10
 
 - camera_id: "C30251"
-  name: "I-94: I-94 WB E of T.H.120"
-  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30251"
+  name: "I-94: WB east of T.H.120"
+  snapshot_url: "https://video.dot.state.mn.us/video/image/metro/C30251"
   corridor: "I-94"
   direction: "WB"
-  poll_interval_sec: 30
+  poll_interval_sec: 10
 
 - camera_id: "C30285"
-  name: "I-94: I-94 WB @ Ideal Ave N"
-  snapshot_url: "https://public.carsprogram.org/cameras/MN/C30285"
+  name: "I-94: WB @ Ideal Ave N"
+  snapshot_url: "https://video.dot.state.mn.us/video/image/metro/C30285"
   corridor: "I-94"
   direction: "WB"
-  poll_interval_sec: 30
+  poll_interval_sec: 10

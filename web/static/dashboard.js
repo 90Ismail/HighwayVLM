@@ -1,4 +1,4 @@
-const REFRESH_SECONDS = 30;
+const REFRESH_SECONDS = 10;
 
 const grid = document.getElementById("camera-grid");
 const lastUpdated = document.getElementById("last-updated");
