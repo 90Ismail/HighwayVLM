@@ -447,6 +447,10 @@ body::before {
 
 .card-link {
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   text-align: center;
   padding: 9px 10px;
   border-radius: 10px;
@@ -459,8 +463,26 @@ body::before {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.card-link::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  flex: 0 0 14px;
+}
+
+.card-link.incidents-link::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23041623' d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+}
+
 .card-link.hourly-link {
   background: linear-gradient(135deg, #ffc88f, #ff9a3c);
+}
+
+.card-link.hourly-link::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23041623' d='M12 1a11 11 0 1 0 11 11A11 11 0 0 0 12 1zm1 11.41V6h-2v7l6 3.5 1-1.73z'/%3E%3C/svg%3E");
 }
 
 .card-link:hover {
