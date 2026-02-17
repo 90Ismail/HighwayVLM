@@ -1,0 +1,24 @@
+# Version control
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# App Data & Secrets
+db/
+data/
+config.env
+.env
+logs/
+*.db
+*.sqlite3
+
+# Streamlit
+.streamlit/
