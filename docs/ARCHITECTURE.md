@@ -17,6 +17,7 @@
 5. `highwayvlm/storage.py` (persistence layer)
    - SQLite schema and query helpers.
    - Incident/event/hourly archive writes.
+   - Per camera-hour incident report rows linked to hourly snapshots.
 6. `config/`, `data/`, `logs/` (config + state)
    - Declarative config + runtime artifacts.
 

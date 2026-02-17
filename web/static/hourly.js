@@ -163,6 +163,22 @@ const renderHourly = (items) => {
     summary.innerHTML = `<strong>Summary:</strong> ${item.summary || "No summary recorded."}`;
     right.appendChild(summary);
 
+    const reports = Array.isArray(item.incident_reports) ? item.incident_reports : [];
+    const reportText = reports.length
+      ? reports
+          .map((report) => {
+            const kind = formatType(report.incident_type || report.report_kind);
+            const severity = report.severity ? ` (${report.severity})` : "";
+            const description = report.description || "No description provided.";
+            return `${kind}${severity}: ${description}`;
+          })
+          .join(" | ")
+      : "No hourly incident report rows were stored.";
+    const reportSummary = document.createElement("p");
+    reportSummary.className = "detail";
+    reportSummary.innerHTML = `<strong>Incident reports:</strong> ${reportText}`;
+    right.appendChild(reportSummary);
+
     if (item.error) {
       const error = document.createElement("p");
       error.className = "detail";

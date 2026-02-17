@@ -81,6 +81,16 @@ def camera_hourly_page(camera_id: str):
     return RedirectResponse(url=f"/hourly?camera_id={quote(camera_id)}")
 
 
+@app.get("/overnight", response_class=HTMLResponse)
+def overnight_page():
+    return FileResponse(_WEB_DIR / "overnight.html")
+
+
+@app.get("/camera/{camera_id}/overnight")
+def camera_overnight_page(camera_id: str):
+    return RedirectResponse(url=f"/overnight?camera_id={quote(camera_id)}")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

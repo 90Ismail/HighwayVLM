@@ -130,6 +130,25 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hourly_incident_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                camera_id TEXT,
+                hour_bucket TEXT,
+                created_at TEXT,
+                captured_at TEXT,
+                image_path TEXT,
+                traffic_state TEXT,
+                report_kind TEXT,
+                incident_type TEXT,
+                severity TEXT,
+                description TEXT,
+                notes TEXT,
+                overall_confidence REAL
+            )
+            """
+        )
         _ensure_columns(
             conn,
             "cameras",
@@ -176,6 +195,9 @@ def init_db():
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_hourly_snapshots_hour ON hourly_snapshots(hour_bucket)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_hourly_incident_reports_camera_hour ON hourly_incident_reports(camera_id, hour_bucket)"
         )
 
 
@@ -508,8 +530,9 @@ def _archive_hourly_snapshot(log_entry):
     else:
         status = "unknown"
     summary = _build_hourly_summary(log_entry, incidents)
+    inserted = False
     with _connect() as conn:
-        conn.execute(
+        cursor = conn.execute(
             """
             INSERT INTO hourly_snapshots (
                 camera_id,
@@ -547,6 +570,75 @@ def _archive_hourly_snapshot(log_entry):
                 error,
                 skipped_reason,
             ),
+        )
+        inserted = cursor.rowcount == 1
+    if inserted:
+        _archive_hourly_incident_reports(log_entry, hour_bucket, incidents)
+
+
+def _archive_hourly_incident_reports(log_entry, hour_bucket, incidents):
+    base_payload = (
+        log_entry.get("camera_id"),
+        hour_bucket,
+        log_entry.get("created_at"),
+        log_entry.get("captured_at"),
+        log_entry.get("image_path"),
+        log_entry.get("traffic_state"),
+        log_entry.get("notes"),
+        log_entry.get("overall_confidence"),
+    )
+    rows = []
+    if incidents:
+        for incident in incidents:
+            incident_type = "incident"
+            severity = "unknown"
+            description = None
+            if isinstance(incident, dict):
+                incident_type = incident.get("type") or "incident"
+                severity = incident.get("severity") or "unknown"
+                description = incident.get("description")
+            else:
+                description = str(incident)
+            rows.append(
+                (
+                    *base_payload[:6],
+                    "incident",
+                    incident_type,
+                    severity,
+                    description,
+                    *base_payload[6:],
+                )
+            )
+    else:
+        rows.append(
+            (
+                *base_payload[:6],
+                "no_incident",
+                "none",
+                "none",
+                "No incident detected in the saved hourly snapshot for this camera.",
+                *base_payload[6:],
+            )
+        )
+    with _connect() as conn:
+        conn.executemany(
+            """
+            INSERT INTO hourly_incident_reports (
+                camera_id,
+                hour_bucket,
+                created_at,
+                captured_at,
+                image_path,
+                traffic_state,
+                report_kind,
+                incident_type,
+                severity,
+                description,
+                notes,
+                overall_confidence
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
         )
 
 
@@ -784,8 +876,39 @@ def list_hourly_snapshots(limit=336, camera_id=None):
     params.append(limit)
     with _connect() as conn:
         rows = conn.execute(query, params).fetchall()
+        report_params = []
+        report_query = (
+            "SELECT camera_id, hour_bucket, report_kind, incident_type, severity, description, "
+            "notes, overall_confidence, created_at, captured_at, image_path, traffic_state "
+            "FROM hourly_incident_reports"
+        )
+        if camera_id:
+            report_query += " WHERE camera_id = ?"
+            report_params.append(camera_id)
+        report_query += " ORDER BY created_at DESC, id DESC"
+        report_rows = conn.execute(report_query, report_params).fetchall()
+    reports_by_bucket = {}
+    for row in report_rows:
+        key = (row[0], row[1])
+        reports_by_bucket.setdefault(key, []).append(
+            {
+                "camera_id": row[0],
+                "hour_bucket": row[1],
+                "report_kind": row[2],
+                "incident_type": row[3],
+                "severity": row[4],
+                "description": row[5],
+                "notes": row[6],
+                "overall_confidence": row[7],
+                "created_at": row[8],
+                "captured_at": row[9],
+                "image_path": row[10],
+                "traffic_state": row[11],
+            }
+        )
     results = []
     for row in rows:
+        key = (row[1], row[5])
         results.append(
             {
                 "id": row[0],
@@ -804,6 +927,7 @@ def list_hourly_snapshots(limit=336, camera_id=None):
                 "summary": row[13],
                 "error": sanitize_error_message(row[14]),
                 "skipped_reason": sanitize_error_message(row[15]),
+                "incident_reports": reports_by_bucket.get(key, []),
             }
         )
     return results

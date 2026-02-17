@@ -1,9 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HighwayVLM | Hourly Checks</title>
+    <title>HighwayVLM | Overnight Monitor</title>
     <link rel="stylesheet" href="/static/archive.css" />
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
   </head>
@@ -11,10 +11,10 @@
     <main class="shell">
       <header class="page-head">
         <div>
-          <p class="kicker">HighwayVLM Archive</p>
-          <h1>Hourly Checks</h1>
+          <p class="kicker">HighwayVLM Monitor</p>
+          <h1>Overnight Monitor</h1>
           <p class="subtitle" id="page-subtitle">
-            One saved frame per camera-hour to verify overnight coverage and pipeline health.
+            Morning-ready view of each camera's hourly snapshots and incident reports.
           </p>
           <nav class="nav-links">
             <a href="/">Dashboard</a>
@@ -30,12 +30,11 @@
           </label>
           <div class="control-row">
             <label>
-              Rows
-              <select id="limit-filter">
-                <option value="72">72</option>
-                <option value="168" selected>168</option>
-                <option value="336">336</option>
-                <option value="720">720</option>
+              Window
+              <select id="hours-filter">
+                <option value="8">Last 8 hours</option>
+                <option value="12" selected>Last 12 hours</option>
+                <option value="24">Last 24 hours</option>
               </select>
             </label>
             <label>
@@ -48,27 +47,27 @@
 
       <section class="stats">
         <article class="stat-card">
-          <span>Total hourly captures</span>
+          <span>Cameras covered</span>
+          <strong id="camera-total">--</strong>
+        </article>
+        <article class="stat-card">
+          <span>Hourly rows in window</span>
           <strong id="hourly-total">--</strong>
         </article>
         <article class="stat-card">
-          <span>Latest hourly check</span>
-          <strong id="latest-hour">--</strong>
+          <span>Incident report rows</span>
+          <strong id="report-total">--</strong>
         </article>
         <article class="stat-card">
-          <span>Total incidents archived</span>
-          <strong id="incident-total">--</strong>
-        </article>
-        <article class="stat-card">
-          <span>Latest incident</span>
-          <strong id="latest-incident">--</strong>
+          <span>Cameras with incidents</span>
+          <strong id="camera-incident-total">--</strong>
         </article>
       </section>
 
-      <section class="list-shell" id="hourly-list"></section>
-      <p class="empty" id="hourly-empty" hidden>No hourly checks found for the selected camera.</p>
+      <section class="list-shell" id="overnight-list"></section>
+      <p class="empty" id="overnight-empty" hidden>No overnight records found for this filter.</p>
     </main>
 
-    <script src="/static/hourly.js"></script>
+    <script src="/static/overnight.js"></script>
   </body>
 </html>
