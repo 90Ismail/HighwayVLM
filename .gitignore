@@ -201,6 +201,12 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# HighwayVLM runtime artifacts
+data/frames/
+data/raw_vlm_outputs/
+data/*.db
+logs/*.jsonl
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

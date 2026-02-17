@@ -1,6 +1,5 @@
 requests
 pyyaml
-flask
 fastapi
 pydantic
 uvicorn

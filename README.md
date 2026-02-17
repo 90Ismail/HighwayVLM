@@ -1,46 +1,37 @@
-# MnDOT I-94 VLM Traffic Monitoring (Prototype)
+# HighwayVLM
 
-## Overview
-This project analyzes MnDOT freeway camera imagery with a vision-language model.
-It polls still-image snapshots (not live video feeds), stores the frames, and
-runs Qwen2.5-VL on new or changed images to summarize traffic conditions.
+Traffic camera snapshot polling + VLM analysis + dashboard/API.
 
-## How It Works
-- Polls each camera's snapshot URL on a per-camera interval.
-- Saves snapshots to `data/frames` and computes a hash.
-- Runs the VLM only when the snapshot changes.
-- Logs results to SQLite and keeps raw VLM responses in `data/raw_vlm_outputs`.
+## Quick Start
+1. Install deps:
+   `pip install -r requirements.txt`
+2. Set env vars in `.env`:
+   `OPENAI_API_KEY` (or `VLM_API_KEY`) and optional overrides.
+3. Run API + worker:
+   `uvicorn main:app --host 0.0.0.0 --port 8000 --reload`
+4. Open:
+   `http://localhost:8000`
+5. Optional one-off runners:
+   - `python scripts/snapshot.py`
+   - `python scripts/run_vlm.py`
 
-## Model
-By default the system uses Qwen2.5-VL via OpenRouter:
+## Project Layout
+- `highwayvlm/`: primary application source code (single source of truth).
+- `web/`: HTML/CSS/JS for dashboard and archive pages.
+- `config/`: camera configuration (`cameras.yaml`).
+- `data/`: frames, raw model outputs, SQLite DB.
+- `logs/`: append-only operational logs.
+- `scripts/`: operational entry points for one-off ingest/VLM jobs.
+- `legacy/`: compatibility shims from the previous layout.
+- `docs/`: architecture and structure docs.
 
-- Model: `qwen/qwen2.5-vl-32b-instruct`
-- Override with `VLM_MODEL`
+## Core Runtime Flow
+1. `highwayvlm/api.py` starts FastAPI and background worker.
+2. `highwayvlm/pipeline.py` polls cameras and deduplicates unchanged frames.
+3. `highwayvlm/vlm/client.py` analyzes frames with the configured model.
+4. `highwayvlm/storage.py` writes logs/events/hourly snapshots to SQLite.
+5. `web/` pages read API endpoints to render dashboard + archives.
 
-## Camera Configuration
-Cameras are configured in `config/cameras.yaml`:
-
-- `camera_id`, `name`, `corridor`, `direction`
-- `snapshot_url` (direct image or metadata endpoint)
-- `poll_interval_sec` (per-camera polling interval)
-
-## External APIs & Credentials
-Required but not included:
-
-- Camera snapshot endpoints (or metadata endpoints that resolve to images)
-- OpenRouter API key for VLM calls
-
-Credentials are injected via environment variables, including:
-
-- `OPENROUTER_API_KEY` or `VLM_API_KEY`
-- `VLM_MODEL`
-- `SNAPSHOT_URL_TEMPLATE` (optional)
-- `CAMERA_METADATA_URL_TEMPLATE` (optional)
-- `IMAGE_URL_REGEX` (optional)
-
-## Runtime Notes
-- The system uses snapshot polling, not streaming video.
-- Logs and the minimal API/dashboard are served via `main.py`.
-
-## Disclaimer
-This repository is a prototype and not a production system.
+## Documentation
+- `docs/ARCHITECTURE.md`: component boundaries and data flow.
+- `docs/STRUCTURE.md`: folder-by-folder guide.

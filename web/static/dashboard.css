@@ -109,6 +109,29 @@ body::before {
   max-width: 520px;
 }
 
+.top-links {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.top-links a {
+  text-decoration: none;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #9feaff;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(16, 29, 46, 0.7);
+  border: 1px solid rgba(56, 215, 255, 0.24);
+}
+
+.top-links a:hover {
+  background: rgba(22, 37, 58, 0.88);
+}
+
 .controls {
   display: grid;
   gap: 14px;
@@ -413,6 +436,35 @@ body::before {
 
 .notes {
   margin-top: auto;
+}
+
+.card-actions {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card-link {
+  text-decoration: none;
+  text-align: center;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #041623;
+  background: linear-gradient(135deg, #7fe5ff, #38d7ff);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.card-link.hourly-link {
+  background: linear-gradient(135deg, #ffc88f, #ff9a3c);
+}
+
+.card-link:hover {
+  filter: brightness(1.05);
 }
 
 @keyframes float-in {

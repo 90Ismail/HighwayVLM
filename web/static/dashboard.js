@@ -47,17 +47,27 @@ const setStatus = (text, state, detail) => {
 
 const buildCard = (camera) => {
   const node = template.content.firstElementChild.cloneNode(true);
-  node.dataset.cameraId = camera.camera_id;
+  const cameraId = camera.camera_id;
+  node.dataset.cameraId = cameraId;
   if (camera.snapshot_url) {
     node.dataset.snapshotUrl = camera.snapshot_url;
   }
-  node.querySelector(".camera-name").textContent = camera.name || camera.camera_id;
+  node.querySelector(".camera-name").textContent = camera.name || cameraId;
   node.querySelector(".camera-sub").textContent = `${camera.corridor || ""} ${camera.direction || ""}`.trim();
   const link = node.querySelector(".snapshot-link");
   link.href = camera.snapshot_url || "#";
+  const incidentsLink = node.querySelector(".incidents-link");
+  const hourlyLink = node.querySelector(".hourly-link");
+  const encodedCameraId = encodeURIComponent(cameraId || "");
+  if (incidentsLink) {
+    incidentsLink.href = `/camera/${encodedCameraId}/incidents`;
+  }
+  if (hourlyLink) {
+    hourlyLink.href = `/camera/${encodedCameraId}/hourly`;
+  }
   const snapshot = node.querySelector(".snapshot");
   const img = node.querySelector(".snapshot-img");
-  img.alt = `Camera snapshot for ${camera.name || camera.camera_id || "camera"}`;
+  img.alt = `Camera snapshot for ${camera.name || cameraId || "camera"}`;
   img.addEventListener("load", () => {
     snapshot.classList.add("is-loaded");
   });
@@ -83,6 +93,23 @@ const resolveNotes = (analysis, latest, fallback) => {
     return note;
   }
   return fallback;
+};
+
+const buildSummaryText = (trafficLabel, incidents, isUnknown) => {
+  if (!incidents.length) {
+    return isUnknown
+      ? "No summary yet."
+      : `Traffic appears ${trafficLabel.toLowerCase()} with no active incidents detected.`;
+  }
+
+  const types = incidents
+    .map((incident) => titleCase(incident?.type || "incident"))
+    .filter(Boolean);
+  const uniqueTypes = [...new Set(types)];
+  const joinedTypes = uniqueTypes.join(", ");
+  const stateText = isUnknown ? "unknown traffic conditions" : `${trafficLabel.toLowerCase()} traffic`;
+  const incidentWord = incidents.length === 1 ? "incident" : "incidents";
+  return `${incidents.length} ${incidentWord} detected under ${stateText}: ${joinedTypes}.`;
 };
 
 const updateCard = (node, summary) => {
@@ -174,10 +201,7 @@ const updateCard = (node, summary) => {
   }
 
   if (summaryText) {
-    const summaryFallback = isUnknown
-      ? "No summary yet."
-      : `Traffic appears ${trafficLabel.toLowerCase()}.`;
-    summaryText.textContent = resolveNotes(analysis, latest, summaryFallback);
+    summaryText.textContent = buildSummaryText(trafficLabel, incidents, isUnknown);
   }
 };
 

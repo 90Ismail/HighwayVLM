@@ -1,0 +1,73 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HighwayVLM | Incidents Archive</title>
+    <link rel="stylesheet" href="/static/archive.css" />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="page-head">
+        <div>
+          <p class="kicker">HighwayVLM Archive</p>
+          <h1>Incidents</h1>
+          <p class="subtitle" id="page-subtitle">
+            Full incident history with timestamps, camera context, and detailed summaries.
+          </p>
+          <nav class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/incidents">Incidents</a>
+            <a href="/hourly">Hourly Checks</a>
+          </nav>
+        </div>
+        <section class="controls">
+          <label>
+            Camera
+            <select id="camera-filter"></select>
+          </label>
+          <div class="control-row">
+            <label>
+              Rows
+              <select id="limit-filter">
+                <option value="100">100</option>
+                <option value="250" selected>250</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+              </select>
+            </label>
+            <label>
+              Refresh
+              <button id="refresh-now" type="button">Reload</button>
+            </label>
+          </div>
+        </section>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <span>Total incidents</span>
+          <strong id="incident-total">--</strong>
+        </article>
+        <article class="stat-card">
+          <span>Latest incident</span>
+          <strong id="latest-incident">--</strong>
+        </article>
+        <article class="stat-card">
+          <span>Hourly captures</span>
+          <strong id="hourly-total">--</strong>
+        </article>
+        <article class="stat-card">
+          <span>Latest hourly check</span>
+          <strong id="latest-hour">--</strong>
+        </article>
+      </section>
+
+      <section class="list-shell" id="incidents-list"></section>
+      <p class="empty" id="incidents-empty" hidden>No incidents found for the selected camera.</p>
+    </main>
+
+    <script src="/static/incidents.js"></script>
+  </body>
+</html>
