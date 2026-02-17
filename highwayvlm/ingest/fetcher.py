@@ -5,6 +5,7 @@ import requests
 
 from highwayvlm.settings import (
     FRAMES_DIR,
+    LIVE_FRAMES_DIR,
     get_image_url_regex,
     get_camera_metadata_url_template,
     get_snapshot_url_template,
@@ -230,6 +231,9 @@ def fetch_snapshot_bytes(camera):
 def save_snapshot(camera_id, image_bytes, content_type, captured_at):
     ext = _extension_from_content_type(content_type)
     FRAMES_DIR.mkdir(parents=True, exist_ok=True)
-    path = FRAMES_DIR / f"{camera_id}_{captured_at}.{ext}"
+    day_bucket = captured_at[:8] if captured_at else "unknown_day"
+    camera_bucket = camera_id or "unknown_camera"
+    path = LIVE_FRAMES_DIR / camera_bucket / day_bucket / f"{camera_bucket}_{captured_at}.{ext}"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(image_bytes)
-    return path
+    return path.relative_to(FRAMES_DIR)
